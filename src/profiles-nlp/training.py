@@ -7,11 +7,15 @@ import random
 
 def get_training_files(n_models):
     files = []
+    count = 0
     for r, d, f in os.walk("profiles/training"):
         for profile in f:
             files.append(os.path.join(r, profile))
+            count += 1
+            if count > n_models:
+                return files
 
-    return files[:n_models]
+    return files
 
 
 def annotate_file(profile, annotations):
@@ -28,19 +32,14 @@ def annotate_file(profile, annotations):
 
 
 def annotate_line(line, annotations):
-    nlp = spacy.blank("en")
-    doc = nlp(line)
-
     processed_data = [line]
     lower_line = str.lower(line)
     entities = []
-    for token in doc:
-        text = str.lower(token.text)
-        if text in annotations:
-            occurs = [(m.start(), m.end()) for m in re.finditer(text, lower_line)]
-            for occurrence in occurs:
-                entity = [occurrence[0], occurrence[1], annotations[text]]
-                entities.append(entity)
+    for annotation in annotations:
+        occurs = [(m.start(), m.end()) for m in re.finditer(annotation, lower_line)]
+        for occurrence in occurs:
+            entity = [occurrence[0], occurrence[1], annotations[annotation]]
+            entities.append(entity)
     processed_data.append({"entities": entities})
     return processed_data
 
@@ -71,7 +70,7 @@ def generate_training_data(n_models):
     print("Training Data Generated")
 
 
-def train_model(generate_data=False, n_models=1):
+def train_model(generate_data=False, n_models=100):
     if generate_data:
         generate_training_data(n_models)
 
