@@ -1,3 +1,4 @@
 /src/profiles-nlp/models
 /src/profiles-nlp/profiles/training
 /src/profiles-nlp/profiles/untrained
+/src/profiles-nlp/data/training.json

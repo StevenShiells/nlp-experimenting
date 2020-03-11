@@ -38,10 +38,7 @@ def run():
     print("Tokens", [(t.text, t.ent_type_, t.ent_iob) for t in doc])
 
 
-
-
-
 if __name__ == "__main__":
-    files = training.train_model()
+    files = training.train_model(1)
     #run()
 
