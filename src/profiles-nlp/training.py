@@ -2,6 +2,7 @@ import os
 import spacy
 import json
 import re
+import random
 
 
 def get_training_files(n_models):
@@ -50,8 +51,8 @@ def get_annotations():
         return annotations
 
 
-def train_model(n_models):
-    print("Training Model")
+def generate_training_data(n_models):
+    print("Generate Training Data")
 
     if os.path.exists("data/training.json"):
         print("Deleting old training data")
@@ -67,4 +68,41 @@ def train_model(n_models):
     with open("data/training.json", "w+") as f:
         f.write(json.dumps(annotated_data, indent=4))
 
-    print("Training complete")
+    print("Training Data Generated")
+
+
+def train_model(generate_data=False, n_models=1):
+    if generate_data:
+        generate_training_data(n_models)
+
+    print("Training Model")
+    with open("data/training.json") as f:
+        TRAINING_DATA = json.loads(f.read())
+
+    nlp = spacy.blank("en")
+    ner = nlp.create_pipe("ner")
+    nlp.add_pipe(ner)
+
+    annotations = get_annotations()
+    annotation_labels = set()
+    for annotation in annotations:
+        annotation_labels.add(annotations[annotation])
+
+    for annotation_label in annotation_labels:
+        ner.add_label(annotation_label)
+
+    nlp.begin_training()
+
+    for itn in range(10):
+        print("Training iteration: {}".format(itn))
+        random.shuffle(TRAINING_DATA)
+        losses = {}
+
+        for batch in spacy.util.minibatch(TRAINING_DATA, size=10):
+            texts = [text for text, entities in batch]
+            annotations = [entities for text, entities in batch]
+
+            nlp.update(texts, annotations, losses=losses)
+
+    nlp.to_disk("models/")
+    print("Model Training Completed")
