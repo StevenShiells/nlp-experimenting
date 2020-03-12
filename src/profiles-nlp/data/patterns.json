@@ -1,0 +1,5 @@
+[
+    {"label": "ROLE", "pattern": [{"LOWER": "developer"}]},
+    {"label": "ROLE", "pattern": [{"LOWER": "lead"}, {"LOWER": "developer"}]},
+    {"label": "ROLE", "pattern": [{"LOWER": "senior"}, {"LOWER": "developer"}]}
+]

@@ -3,6 +3,7 @@ import spacy
 import json
 import re
 import random
+from spacy.pipeline import EntityRuler
 
 
 def get_training_files(n_models):
@@ -50,6 +51,12 @@ def get_annotations():
         return annotations
 
 
+def get_patterns():
+    with open("data/patterns.json") as f:
+        patterns = json.loads(f.read())
+        return patterns
+
+
 def generate_training_data(n_models):
     print("Generate Training Data")
 
@@ -81,6 +88,11 @@ def train_model(generate_data=False, n_models=100):
     nlp = spacy.blank("en")
     ner = nlp.create_pipe("ner")
     nlp.add_pipe(ner)
+
+    patterns = get_patterns()
+    ruler = EntityRuler(nlp)
+    ruler.add_patterns(patterns)
+    nlp.add_pipe(ruler)
 
     annotations = get_annotations()
     annotation_labels = set()
