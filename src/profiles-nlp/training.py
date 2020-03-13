@@ -4,6 +4,7 @@ import json
 import re
 import random
 from spacy.pipeline import EntityRuler
+import shutil
 
 
 def get_training_files(n_models):
@@ -21,7 +22,7 @@ def get_training_files(n_models):
 
 def annotate_file(profile, annotations):
     print("Annotating file {}".format(profile))
-    with open(profile) as file:
+    with open(profile, encoding='utf8') as file:
         lines = file.readlines()
 
     annotated_data = []
@@ -37,7 +38,7 @@ def annotate_line(line, annotations):
     lower_line = str.lower(line)
     entities = []
     for annotation in annotations:
-        occurs = [(m.start(), m.end()) for m in re.finditer(annotation, lower_line)]
+        occurs = [(m.start(), m.end()) for m in re.finditer("{}[\s,!?.]{}".format(annotation, "{1}"), lower_line)]
         for occurrence in occurs:
             entity = [occurrence[0], occurrence[1], annotations[annotation]]
             entities.append(entity)
@@ -92,7 +93,7 @@ def train_model(generate_data=False, n_models=100):
     patterns = get_patterns()
     ruler = EntityRuler(nlp)
     ruler.add_patterns(patterns)
-    nlp.add_pipe(ruler)
+    #nlp.add_pipe(ruler)
 
     annotations = get_annotations()
     annotation_labels = set()
@@ -114,6 +115,9 @@ def train_model(generate_data=False, n_models=100):
             annotations = [entities for text, entities in batch]
 
             nlp.update(texts, annotations, losses=losses)
+
+    print("Clearing old model")
+    shutil.rmtree("models/")
 
     nlp.to_disk("models/")
     print("Model Training Completed")
