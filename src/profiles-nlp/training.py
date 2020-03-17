@@ -12,10 +12,10 @@ def get_training_files(n_models):
     count = 0
     for r, d, f in os.walk("profiles/training"):
         for profile in f:
-            files.append(os.path.join(r, profile))
             count += 1
             if count > n_models:
                 return files
+            files.append(os.path.join(r, profile))
 
     return files
 
@@ -37,18 +37,46 @@ def annotate_line(line, annotations):
     processed_data = [line]
     lower_line = str.lower(line)
     entities = []
+
+    annotations.sort(key=get_annotation_length, reverse=True)
+
+    punctuation_regex = "[\s,!?.:]{1}"
+    whitespace_regex = "[\s]+"
+
     for annotation in annotations:
-        occurs = [(m.start(), m.end()) for m in re.finditer("{}[\s,!?.]{}".format(annotation, "{1}"), lower_line)]
-        for occurrence in occurs:
-            entity = [occurrence[0], occurrence[1], annotations[annotation]]
-            entities.append(entity)
+        process_regex("{}{}{}".format(whitespace_regex, re.escape(annotation), punctuation_regex), lower_line, entities)
+        process_regex("^{}{}".format(re.escape(annotation), punctuation_regex), lower_line, entities)
     processed_data.append({"entities": entities})
     return processed_data
 
 
+def process_regex(regex, lower_line, entities):
+    occurs = [(m.start(), m.end()) for m in re.finditer(regex, lower_line)]
+    for occurrence in occurs:
+        entity = [occurrence[0], occurrence[1] - 1, 'TECH']
+        already_matched = False
+        for ent in entities:
+            if (ent[0] <= entity[0] <= ent[1]) or (ent[0] <= entity[1] <= ent[1]):
+                already_matched = True
+                break
+
+        if not already_matched:
+            entities.append(entity)
+
+
+def get_annotation_length(annotation):
+    return len(annotation)
+
+
 def get_annotations():
-    with open("data/annotations_dict.json") as f:
-        annotations = json.loads(f.read())
+    with open("data/tech_list") as f:
+        raw_techs = f.readlines()
+        annotations = []
+        for raw_tech in raw_techs:
+            tech = str.lower(raw_tech).strip("\n")
+            if tech not in annotations:
+                annotations.append(tech)
+
         return annotations
 
 
@@ -95,13 +123,7 @@ def train_model(generate_data=False, n_models=100):
     ruler.add_patterns(patterns)
     #nlp.add_pipe(ruler)
 
-    annotations = get_annotations()
-    annotation_labels = set()
-    for annotation in annotations:
-        annotation_labels.add(annotations[annotation])
-
-    for annotation_label in annotation_labels:
-        ner.add_label(annotation_label)
+    ner.add_label('TECH')
 
     nlp.begin_training()
 
