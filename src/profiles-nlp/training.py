@@ -44,16 +44,16 @@ def annotate_line(line, annotations):
     whitespace_regex = "[\s]+"
 
     for annotation in annotations:
-        process_regex("{}{}{}".format(whitespace_regex, re.escape(annotation), punctuation_regex), lower_line, entities)
-        process_regex("^{}{}".format(re.escape(annotation), punctuation_regex), lower_line, entities)
+        process_regex("{}{}{}".format(whitespace_regex, re.escape(annotation), punctuation_regex), lower_line, entities, 1)
+        process_regex("^{}{}".format(re.escape(annotation), punctuation_regex), lower_line, entities, 0)
     processed_data.append({"entities": entities})
     return processed_data
 
 
-def process_regex(regex, lower_line, entities):
+def process_regex(regex, lower_line, entities, start_offset):
     occurs = [(m.start(), m.end()) for m in re.finditer(regex, lower_line)]
     for occurrence in occurs:
-        entity = [occurrence[0], occurrence[1] - 1, 'TECH']
+        entity = [occurrence[0] + start_offset, occurrence[1] - 1, 'TECH']
         already_matched = False
         for ent in entities:
             if (ent[0] <= entity[0] <= ent[1]) or (ent[0] <= entity[1] <= ent[1]):
@@ -142,4 +142,6 @@ def train_model(generate_data=False, n_models=100):
     shutil.rmtree("models/")
 
     nlp.to_disk("models/")
+
+
     print("Model Training Completed")
