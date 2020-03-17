@@ -40,8 +40,8 @@ def annotate_line(line, annotations):
 
     annotations.sort(key=get_annotation_length, reverse=True)
 
-    punctuation_regex = "[\s,!?.:]{1}"
-    whitespace_regex = "[\s]+"
+    punctuation_regex = "[\s,!?.:\(\)]{1}"
+    whitespace_regex = "[\s\(]{1}"
 
     for annotation in annotations:
         process_regex("{}{}{}".format(whitespace_regex, re.escape(annotation), punctuation_regex), lower_line, entities, 1)
@@ -52,6 +52,7 @@ def annotate_line(line, annotations):
 
 def process_regex(regex, lower_line, entities, start_offset):
     occurs = [(m.start(), m.end()) for m in re.finditer(regex, lower_line)]
+
     for occurrence in occurs:
         entity = [occurrence[0] + start_offset, occurrence[1] - 1, 'TECH']
         already_matched = False
