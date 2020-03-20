@@ -67,7 +67,7 @@ def read_file(file):
 
 
 if __name__ == "__main__":
-    n_models = 1
+    n_models = 25
     training.train_model(True, n_models)
     run(n_models)
 

@@ -27,10 +27,29 @@ def annotate_file(profile, annotations):
 
     annotated_data = []
     for line in lines:
-        annotated_data.append(annotate_line(line, annotations))
+        ents = annotate_line(line, annotations)
+        annotated_data.append(annotate_output(line, ents))
 
     print("Finished annotating file {}".format(profile))
     return annotated_data
+
+
+def annotate_output(text, ents):
+    if len(ents) == 0:
+        return text
+
+    ents_list = [ent for ent in ents]
+    ents_list.sort(key=get_end_char, reverse=True)
+
+    for ent in ents_list:
+        new_text = text[:ent[0]] + " <START:TECH> " + text[ent[0]:ent[1]] + " <END> " + text[ent[1]:]
+        text = new_text
+
+    return text
+
+
+def get_end_char(ent):
+    return ent[1]
 
 
 def annotate_line(line, annotations):
@@ -47,7 +66,7 @@ def annotate_line(line, annotations):
         process_regex("{}{}{}".format(whitespace_regex, re.escape(annotation), punctuation_regex), lower_line, entities, 1)
         process_regex("^{}{}".format(re.escape(annotation), punctuation_regex), lower_line, entities, 0)
     processed_data.append({"entities": entities})
-    return processed_data
+    return entities
 
 
 def process_regex(regex, lower_line, entities, start_offset):
@@ -97,12 +116,10 @@ def generate_training_data(n_models):
     files = get_training_files(n_models)
     annotations = get_annotations()
 
-    annotated_data = []
     for file in files:
-        annotated_data += annotate_file(file, annotations)
-
-    with open("data/training.json", "w+") as f:
-        f.write(json.dumps(annotated_data, indent=4))
+        annotated_data = annotate_file(file, annotations)
+        with open("data/annotated/{}".format(os.path.basename(file)), "w+") as f:
+            f.write(json.dumps(annotated_data, indent=4))
 
     print("Training Data Generated")
 
